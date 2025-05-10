@@ -1,8 +1,8 @@
 #pragma once
-
 #include <zmq.hpp>
-#include <string>
 #include <vector>
+#include <string>
+#include "arbitrage_strategy.hpp"
 
 class ArbitrageMonitor {
 public:
@@ -11,4 +11,5 @@ public:
 
 private:
     zmq::socket_t subscriber_;
+    ArbitrageStrategy strategy_;
 };

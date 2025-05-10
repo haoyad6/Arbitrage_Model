@@ -18,6 +18,7 @@ link_directories(${PC_ZMQ_LIBRARY_DIRS})
 set(SOURCES
     main.cpp
     arbitrage_monitor.cpp
+    arbitrage_strategy.cpp
 )
 
 # 构建可执行文件

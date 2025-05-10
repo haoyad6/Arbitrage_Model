@@ -8,7 +8,6 @@ ArbitrageMonitor::ArbitrageMonitor(zmq::context_t& context, const std::vector<st
     : subscriber_(context, zmq::socket_type::sub) {
     for (const auto& ep : endpoints) {
         subscriber_.connect(ep);
-        std::cout << "ArbitrageMonitor subscribed to " << ep << std::endl;
     }
 
     subscriber_.set(zmq::sockopt::subscribe, "binance");
@@ -20,11 +19,8 @@ void ArbitrageMonitor::start() {
         zmq::message_t topic_msg;
         zmq::message_t data_msg;
 
-        auto result1 = subscriber_.recv(topic_msg, zmq::recv_flags::none);
-        auto result2 = subscriber_.recv(data_msg, zmq::recv_flags::none);
-
-        if (!result1 || !result2) {
-            std::cerr << "ZMQ 接收失败！" << std::endl;
+        if (!subscriber_.recv(topic_msg, zmq::recv_flags::none) ||
+            !subscriber_.recv(data_msg, zmq::recv_flags::none)) {
             continue;
         }
 
@@ -34,12 +30,15 @@ void ArbitrageMonitor::start() {
         try {
             json j = json::parse(payload);
 
-            std::cout << "[Monitor] Exchange: " << j["exchange"]
-                      << " | 买一: " << j["bid"] << " (量: " << j["bidQty"] << ")"
-                      << " | 卖一: " << j["ask"] << " (量: " << j["askQty"] << ")"
-                      << std::endl;
+            PriceInfo info;
+            info.bid = std::stod(j["bid"].get<std::string>());
+            info.bidQty = std::stod(j["bidQty"].get<std::string>());
+            info.ask = std::stod(j["ask"].get<std::string>());
+            info.askQty = std::stod(j["askQty"].get<std::string>());
+
+            strategy_.updatePrice(j["exchange"].get<std::string>(), info);
         } catch (...) {
-            std::cerr << "Failed to parse payload: " << payload << std::endl;
+            std::cerr << "Failed to parse: " << payload << std::endl;
         }
     }
 }
